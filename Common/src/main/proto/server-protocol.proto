@@ -2,65 +2,12 @@ syntax = "proto3";
 
 package ru.ifmo.java.one.kek;
 
-enum Status {
-    OK = 0;
-    FAIL = 1;
+message SortRequest {
+    int32 n = 1;
+    repeated int32 values = 2;
 }
 
-message BaseRequest {
-    oneof request {
-        ListRequest listRequest = 1;
-        UploadRequest uploadRequest = 2;
-        SourcesRequest sourcesRequest = 3;
-        UpdateRequest updateRequest = 4;
-    }
-}
-
-message ListRequest {}
-
-message FileDescription {
-    int32 id = 1;
-    string name = 2;
-    int64 size = 3;
-}
-
-message ListResponse {
-    int32 count = 1;
-
-    repeated FileDescription files = 2;
-}
-
-message UploadRequest {
-    string name = 1;
-    int64 size = 2;
-    string description = 3;
-}
-
-message UploadResponse {
-    int32 id = 1;
-}
-
-message SourcesRequest {
-    int32 id = 1;
-}
-
-message ClientDescription {
-    bytes ip = 1;
-    int32 port = 2;
-}
-
-message SourcesResponse {
-    int32 count = 1;
-
-    repeated ClientDescription clients = 2;
-}
-
-message UpdateRequest {
-    int32 clientPort = 1;
-    int32 filesCount = 2;
-    repeated int32 fileIds = 3;
-}
-
-message UpdateResponse {
-    Status status = 1;
+message SortResponse {
+    int32 n = 1;
+    repeated int32 values = 2;
 }

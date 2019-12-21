@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package ru.ifmo.java.one.kek;
+
+enum Status {
+    OK = 0;
+    FAIL = 1;
+}
+
+enum TypeOfServer {
+    ROBUST = 0;
+    BLOCKING = 1;
+    NON_BLOCKING = 2;
+}
+
+message RunServerRequest {
+    TypeOfServer typeOfServer = 1;
+}
+
+message RunServerResponse {
+    Status status = 1;
+}
+
+message EndOfTestingRequest {}
+
+message EndOfTestingResponse {
+    Status status = 1;
+}

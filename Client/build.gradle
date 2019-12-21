@@ -21,7 +21,7 @@ protobuf {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'ru.ifmo.java.torrent.ClientGUI'
+        attributes 'Main-Class': 'ru.ifmo.java.one.kek.MainApp'
     }
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
