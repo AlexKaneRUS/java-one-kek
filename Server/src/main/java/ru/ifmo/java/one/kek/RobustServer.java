@@ -14,9 +14,9 @@ import java.util.concurrent.Executors;
 public class RobustServer extends Server {
     private final ExecutorService pool = Executors.newCachedThreadPool();
     private final ServerSocket serverSocket;
-    private final List<Socket> clients = new CopyOnWriteArrayList<>();
+    private final List<Socket> clients = new ArrayList<>();
 
-    public RobustServer(MetricsGatherer gatherer, int port) throws IOException {
+    public RobustServer(MeasurementsGatherer gatherer, int port) throws IOException {
         super(gatherer);
         serverSocket = new ServerSocket(port);
     }
@@ -36,34 +36,36 @@ public class RobustServer extends Server {
     private class RobustWorker implements Runnable {
         private final InputStream input;
         private final OutputStream output;
-        private final long clientStart;
 
         public RobustWorker(Socket socket) throws IOException {
-            clientStart = gatherer.start();
             input = socket.getInputStream();
             output = socket.getOutputStream();
         }
 
         @Override
         public void run() {
-            System.out.println("Robust server is running");
             while (true) {
+                ServerProtocol.SortRequest request;
+                long clientStart;
                 try {
-                    System.out.println("Waiting for client!");
-                    ServerProtocol.SortRequest request = ServerProtocol.SortRequest.parseDelimitedFrom(input);
-                    System.out.println("Got client!");
+                    request = ServerProtocol.SortRequest.parseDelimitedFrom(input);
+                    clientStart = gatherer.time();
+                } catch (IOException e) {
+                    break;
+                }
 
-                    long requestStart = gatherer.start();
+                try {
+                    long requestStart = gatherer.time();
                     List<Integer> values = new ArrayList<>(request.getValuesList());
                     List<Integer> result = Algorithms.sort(values);
-                    gatherer.measureRequest(requestStart);
-                    System.out.println("Algorithmically processed client!");
+                    gatherer.measureRequest(requestStart, request.getClientId());
 
+                    gatherer.measureClient(clientStart, request.getClientId());
                     ServerProtocol.SortResponse.newBuilder()
                             .setN(result.size())
-                            .addAllValues(result).
-                            build().writeDelimitedTo(output);
-                    gatherer.measureClient(clientStart);
+                            .addAllValues(result)
+                            .setTaskId(request.getTaskId())
+                            .build().writeDelimitedTo(output);
                     System.out.println("Processed client!");
                 } catch (IOException e) {
                     e.printStackTrace();

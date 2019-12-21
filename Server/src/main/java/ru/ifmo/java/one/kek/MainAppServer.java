@@ -7,6 +7,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class MainAppServer {
     public static void main(String[] args) throws IOException {
@@ -27,7 +28,11 @@ public class MainAppServer {
             switch (runServerRequest.getTypeOfServer()) {
                 case ROBUST:
                     System.out.println("Setting up Robust server.");
-                    server = new RobustServer(new MetricsGatherer(), Constants.SERVER_PORT + counter);
+                    server = new RobustServer(new MeasurementsGatherer(), Constants.SERVER_PORT + counter);
+                    break;
+                case BLOCKING:
+                    System.out.println("Setting up Blocking server.");
+                    server = new BlockingServer(new MeasurementsGatherer(), Constants.SERVER_PORT + counter);
                     break;
                 default:
                     continue;
@@ -42,7 +47,11 @@ public class MainAppServer {
 
             try {
                 run(mainAppClientInput, mainAppClientOutput, server);
-            } finally {
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+            finally {
                 serverThread.interrupt();
                 mainAppClient.close();
             }
@@ -52,6 +61,10 @@ public class MainAppServer {
     private static void run(InputStream in, OutputStream out, Server server) throws IOException {
         while (true) {
             MainAppServerProtocol.BaseRequest request = MainAppServerProtocol.BaseRequest.parseDelimitedFrom(in);
+
+            if (request == null) {
+                throw new IOException();
+            }
 
             if (request.hasEndOfRoundRequest()) {
                 processEndOfRoundRequest(out, server.getGatherer());
@@ -63,13 +76,17 @@ public class MainAppServer {
         }
     }
 
-    private static void processEndOfRoundRequest(OutputStream out, MetricsGatherer gatherer) throws IOException {
-        List<Long> requestMeasurements = new ArrayList<>(gatherer.getRequestMeasurements());
-        List<Long> clientMeasurements = new ArrayList<>(gatherer.getClientMeasurements());
+    private static void processEndOfRoundRequest(OutputStream out, MeasurementsGatherer gatherer) throws IOException {
+        List<MeasurementsGatherer.Measurement> requestMeasurements = new ArrayList<>(gatherer.getRequestMeasurements());
+        List<MeasurementsGatherer.Measurement> clientMeasurements = new ArrayList<>(gatherer.getClientMeasurements());
         gatherer.clean();
         MainAppServerProtocol.EndOfRoundResponse.newBuilder()
-                .addAllRequestMeasurements(requestMeasurements)
-                .addAllClientMeasurements(clientMeasurements)
+                .addAllRequestMeasurements(requestMeasurements.stream()
+                        .map(MeasurementsGatherer.Measurement::toResponse)
+                        .collect(Collectors.toList()))
+                .addAllClientMeasurements(clientMeasurements.stream()
+                        .map(MeasurementsGatherer.Measurement::toResponse)
+                        .collect(Collectors.toList()))
                 .build().writeDelimitedTo(out);
     }
 

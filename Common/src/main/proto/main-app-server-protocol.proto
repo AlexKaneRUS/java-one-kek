@@ -31,8 +31,14 @@ message BaseRequest {
 message EndOfRoundRequest {}
 
 message EndOfRoundResponse {
-    repeated int64 requestMeasurements = 1;
-    repeated int64 clientMeasurements = 2;
+    message ServerMeasurement {
+        int32 clientId = 1;
+        int64 start = 2;
+        int64 end = 3;
+    }
+
+    repeated ServerMeasurement requestMeasurements = 1;
+    repeated ServerMeasurement clientMeasurements = 2;
 }
 
 message EndOfTestingRequest {}
