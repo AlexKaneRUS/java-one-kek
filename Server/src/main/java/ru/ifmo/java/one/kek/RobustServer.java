@@ -11,12 +11,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class RobustServer implements Server {
+public class RobustServer extends Server {
     private final ExecutorService pool = Executors.newCachedThreadPool();
     private final ServerSocket serverSocket;
     private final List<Socket> clients = new CopyOnWriteArrayList<>();
 
-    public RobustServer(int port) throws IOException {
+    public RobustServer(MetricsGatherer gatherer, int port) throws IOException {
+        super(gatherer);
         serverSocket = new ServerSocket(port);
     }
 
@@ -32,11 +33,13 @@ public class RobustServer implements Server {
         }
     }
 
-    private static class RobustWorker implements Runnable {
+    private class RobustWorker implements Runnable {
         private final InputStream input;
         private final OutputStream output;
+        private final long clientStart;
 
         public RobustWorker(Socket socket) throws IOException {
+            clientStart = gatherer.start();
             input = socket.getInputStream();
             output = socket.getOutputStream();
         }
@@ -49,13 +52,18 @@ public class RobustServer implements Server {
                     System.out.println("Waiting for client!");
                     ServerProtocol.SortRequest request = ServerProtocol.SortRequest.parseDelimitedFrom(input);
                     System.out.println("Got client!");
+
+                    long requestStart = gatherer.start();
                     List<Integer> values = new ArrayList<>(request.getValuesList());
                     List<Integer> result = Algorithms.sort(values);
+                    gatherer.measureRequest(requestStart);
                     System.out.println("Algorithmically processed client!");
+
                     ServerProtocol.SortResponse.newBuilder()
                             .setN(result.size())
                             .addAllValues(result).
                             build().writeDelimitedTo(output);
+                    gatherer.measureClient(clientStart);
                     System.out.println("Processed client!");
                 } catch (IOException e) {
                     e.printStackTrace();

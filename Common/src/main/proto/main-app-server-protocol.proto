@@ -21,6 +21,20 @@ message RunServerResponse {
     Status status = 1;
 }
 
+message BaseRequest {
+    oneof request {
+        EndOfRoundRequest endOfRoundRequest = 1;
+        EndOfTestingRequest endOfTestingRequest = 2;
+    }
+}
+
+message EndOfRoundRequest {}
+
+message EndOfRoundResponse {
+    repeated int64 requestMeasurements = 1;
+    repeated int64 clientMeasurements = 2;
+}
+
 message EndOfTestingRequest {}
 
 message EndOfTestingResponse {

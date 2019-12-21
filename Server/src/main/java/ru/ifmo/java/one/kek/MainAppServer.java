@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainAppServer {
     public static void main(String[] args) throws IOException {
@@ -25,7 +27,7 @@ public class MainAppServer {
             switch (runServerRequest.getTypeOfServer()) {
                 case ROBUST:
                     System.out.println("Setting up Robust server.");
-                    server = new RobustServer(Constants.SERVER_PORT + counter);
+                    server = new RobustServer(new MetricsGatherer(), Constants.SERVER_PORT + counter);
                     break;
                 default:
                     continue;
@@ -38,15 +40,43 @@ public class MainAppServer {
             Thread serverThread = new Thread(server);
             serverThread.start();
 
-            MainAppServerProtocol.EndOfTestingRequest.parseDelimitedFrom(mainAppClientInput);
-
-            server.close();
-            serverThread.interrupt();
-
-            MainAppServerProtocol.EndOfTestingRequest.newBuilder()
-                    .build().writeDelimitedTo(mainAppClientOutput);
-
-            mainAppClient.close();
+            try {
+                run(mainAppClientInput, mainAppClientOutput, server);
+            } finally {
+                serverThread.interrupt();
+                mainAppClient.close();
+            }
         }
+    }
+
+    private static void run(InputStream in, OutputStream out, Server server) throws IOException {
+        while (true) {
+            MainAppServerProtocol.BaseRequest request = MainAppServerProtocol.BaseRequest.parseDelimitedFrom(in);
+
+            if (request.hasEndOfRoundRequest()) {
+                processEndOfRoundRequest(out, server.getGatherer());
+            } else if (request.hasEndOfTestingRequest()) {
+                processEndOfTestingRequest(out, server);
+            } else {
+                System.out.println("Unknown request: " + request);
+            }
+        }
+    }
+
+    private static void processEndOfRoundRequest(OutputStream out, MetricsGatherer gatherer) throws IOException {
+        List<Long> requestMeasurements = new ArrayList<>(gatherer.getRequestMeasurements());
+        List<Long> clientMeasurements = new ArrayList<>(gatherer.getClientMeasurements());
+        gatherer.clean();
+        MainAppServerProtocol.EndOfRoundResponse.newBuilder()
+                .addAllRequestMeasurements(requestMeasurements)
+                .addAllClientMeasurements(clientMeasurements)
+                .build().writeDelimitedTo(out);
+    }
+
+    private static void processEndOfTestingRequest(OutputStream out, Server server) throws IOException {
+        server.close();
+
+        MainAppServerProtocol.EndOfTestingRequest.newBuilder()
+                .build().writeDelimitedTo(out);
     }
 }

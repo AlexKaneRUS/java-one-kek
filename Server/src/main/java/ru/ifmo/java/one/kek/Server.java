@@ -1,5 +1,15 @@
 package ru.ifmo.java.one.kek;
 
-public interface Server extends Runnable {
-    void close();
+public abstract class Server implements Runnable {
+    protected final MetricsGatherer gatherer;
+
+    public Server(MetricsGatherer gatherer) {
+        this.gatherer = gatherer;
+    }
+
+    abstract void close();
+
+    MetricsGatherer getGatherer() {
+        return gatherer;
+    }
 }
