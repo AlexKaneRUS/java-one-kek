@@ -94,13 +94,15 @@ public class NonBlockingServer extends Server {
     private static class Client {
         private final static int BUFFER_SIZE = 1024;
 
-        private final List<ByteBuffer> input = new ArrayList<>();
         private final List<ClientTaskBuffer> output = new ArrayList<>();
 
         private final SocketChannel channel;
         private final MeasurementsGatherer gatherer;
 
-        private final ByteBuffer readBuffer = ByteBuffer.allocate(10 * BUFFER_SIZE);
+        private ByteBuffer messageSizeBuffer = ByteBuffer.allocate(4);
+        private int messageSize = -1;
+
+        private ByteBuffer messageBuffer;
 
         private Map<ClientTask, Long> clientStarts = new HashMap<>();
 
@@ -109,41 +111,7 @@ public class NonBlockingServer extends Server {
             this.gatherer = gatherer;
         }
 
-        void readInput() throws IOException {
-            if (input.isEmpty()) {
-                input.add(ByteBuffer.allocate(BUFFER_SIZE));
-            }
-
-            while (channel.read(readBuffer) > 0) {
-                while (channel.read(readBuffer) > 0) {
-                }
-
-                readBuffer.flip();
-
-                int bufSize = readBuffer.remaining();
-
-                for (int i = 0; i < bufSize; i++) {
-                    ByteBuffer lastBuffer = input.get(input.size() - 1);
-
-                    byte b = readBuffer.get();
-
-//                if (i < 4) {
-//                    String s1 = String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0');
-//                    System.out.println(s1);
-//                }
-                    if (lastBuffer.hasRemaining()) {
-                        lastBuffer.put(b);
-                    } else {
-                        ByteBuffer newLast = ByteBuffer.allocate(BUFFER_SIZE);
-                        newLast.put(b);
-                        input.add(newLast);
-                    }
-                }
-                readBuffer.compact();
-            }
-        }
-
-        private int parseVarLen(byte a, byte b, byte c, byte d) {
+        private List<Integer> parseVarLen(byte a, byte b, byte c, byte d) {
             String as = String.format("%8s", Integer.toBinaryString(a & 0xFF)).replace(' ', '0');
             String bs = String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0');
             String cs = String.format("%8s", Integer.toBinaryString(c & 0xFF)).replace(' ', '0');
@@ -172,19 +140,25 @@ public class NonBlockingServer extends Server {
                 builder.append(s);
             }
 
-            return Integer.parseInt(builder.toString(), 2) + len;
+            return Arrays.stream(new Integer[]{Integer.parseInt(builder.toString(), 2), len})
+                    .collect(Collectors.toList());
         }
 
 
         Optional<ServerProtocol.SortRequest> getSortRequest() throws IOException {
-            System.out.println("Trying to fetch sort request: " + input.size() + " "
-                    + (input.size() != 0 ? input.get(0).position() : "NO"));
+            if (messageSize == 1) {
+                channel.read(messageSizeBuffer);
 
-            if (input.size() == 0 || input.get(0).position() < 4) {
-                return Optional.empty();
+                if (messageSizeBuffer.hasRemaining()) {
+                    return Optional.empty();
+                }
+
+                List<Integer> crutch = parseVarLen(messageSizeBuffer.get(0), messageSizeBuffer.get(1), messageSizeBuffer.get(2),
+                        messageSizeBuffer.get(3));
+                messageSize = crutch.get(0);
+                messageBuffer = ByteBuffer.allocate()
             }
-
-            ByteBuffer buffer = input.get(0);
+            channel.read()
             buffer.flip();
 
             int sizeOfMessage = parseVarLen(buffer.get(0), buffer.get(1), buffer.get(2), buffer.get(3));
