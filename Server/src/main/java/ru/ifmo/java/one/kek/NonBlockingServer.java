@@ -101,6 +101,7 @@ public class NonBlockingServer extends Server {
 
         private ByteBuffer messageSizeBuffer = ByteBuffer.allocate(4);
         private int messageSize = -1;
+        private int len = -1;
 
         private ByteBuffer messageBuffer;
 
@@ -146,50 +147,39 @@ public class NonBlockingServer extends Server {
 
 
         Optional<ServerProtocol.SortRequest> getSortRequest() throws IOException {
-            if (messageSize == 1) {
+            if (messageSize == -1) {
                 channel.read(messageSizeBuffer);
 
                 if (messageSizeBuffer.hasRemaining()) {
                     return Optional.empty();
                 }
 
+                messageSizeBuffer.flip();
                 List<Integer> crutch = parseVarLen(messageSizeBuffer.get(0), messageSizeBuffer.get(1), messageSizeBuffer.get(2),
                         messageSizeBuffer.get(3));
+
                 messageSize = crutch.get(0);
-                messageBuffer = ByteBuffer.allocate()
+                len = crutch.get(1);
+                messageBuffer = ByteBuffer.allocate(messageSize - (4 - len));
+
+                messageSizeBuffer.compact();
             }
-            channel.read()
-            buffer.flip();
 
-            int sizeOfMessage = parseVarLen(buffer.get(0), buffer.get(1), buffer.get(2), buffer.get(3));
+            channel.read(messageBuffer);
 
-            buffer.compact();
-
-            boolean hasRequest = input.stream().mapToInt(Buffer::position).sum() >= sizeOfMessage;
-            System.out.println(input.stream().mapToInt(Buffer::position).sum() + " " + sizeOfMessage);
-
-            if (!hasRequest) {
+            if (messageBuffer.hasRemaining()) {
                 return Optional.empty();
             }
 
-            buffer.flip();
-            ByteBuffer requestAsBytes = ByteBuffer.allocate(sizeOfMessage);
+            ByteBuffer requestAsBytes = ByteBuffer.allocate(len + messageSize);
+            messageSizeBuffer.flip();
+            requestAsBytes.put(messageSizeBuffer);
+            messageBuffer.flip();
+            requestAsBytes.put(messageBuffer);
 
-            while (requestAsBytes.hasRemaining()) {
-                if (buffer.remaining() == 0) {
-                    input.remove(0);
-                    buffer = input.get(0);
-                    buffer.flip();
-                }
-
-                requestAsBytes.put(buffer.get());
-            }
-
-            buffer.compact();
-
-            if (buffer.position() == 0) {
-                input.remove(0);
-            }
+            messageSizeBuffer = ByteBuffer.allocate(4);
+            messageSize = -1;
+            len = -1;
 
             return Optional.of(ServerProtocol.SortRequest.parseDelimitedFrom(
                     new ByteArrayInputStream(requestAsBytes.array())));
@@ -247,33 +237,25 @@ public class NonBlockingServer extends Server {
                 Set<SelectionKey> keys = readSelector.selectedKeys();
                 Iterator<SelectionKey> it = keys.iterator();
 
-                System.out.println(keys);
-
                 while (it.hasNext()) {
                     SelectionKey key = it.next();
 
                     if (key.isReadable()) {
-                        int counter = 0;
-                        while (counter < 10) {
-                            Client client = (Client) key.attachment();
-                            try {
-                                client.readInput();
+                        Client client = (Client) key.attachment();
+                        try {
+                            Optional<ServerProtocol.SortRequest> requestO = client.getSortRequest();
 
-                                Optional<ServerProtocol.SortRequest> requestO = client.getSortRequest();
-
-                                while (requestO.isPresent()) {
-                                    ServerProtocol.SortRequest request = requestO.get();
-                                    System.out.println("Read message.");
-                                    System.out.println(numberOfMessages.incrementAndGet());
-                                    client.clientStarts.put(new ClientTask(request.getClientId(), request.getTaskId()),
-                                            gatherer.time());
-                                    taskPool.submit(new Task(client, request));
-                                    requestO = client.getSortRequest();
-                                    counter++;
-                                }
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                            while (requestO.isPresent()) {
+                                ServerProtocol.SortRequest request = requestO.get();
+                                System.out.println("Read message.");
+                                System.out.println(numberOfMessages.incrementAndGet());
+                                client.clientStarts.put(new ClientTask(request.getClientId(), request.getTaskId()),
+                                        gatherer.time());
+                                taskPool.submit(new Task(client, request));
+                                requestO = client.getSortRequest();
                             }
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
                     }
 
