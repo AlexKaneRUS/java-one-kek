@@ -1,5 +1,7 @@
 package ru.ifmo.java.one.kek;
 
+import org.w3c.dom.ls.LSOutput;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -10,6 +12,7 @@ import java.nio.channels.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -26,6 +29,8 @@ public class NonBlockingServer extends Server {
 
     private final Thread writerThread;
     private final Lock writerLock = new ReentrantLock();
+
+    private AtomicInteger numberOfMessages = new AtomicInteger(0);
 
     public NonBlockingServer(MeasurementsGatherer gatherer, int port) throws IOException {
         super(gatherer);
@@ -48,9 +53,11 @@ public class NonBlockingServer extends Server {
         try {
             readerThread.interrupt();
             writerThread.interrupt();
+            readSelector.wakeup();
+            writeSelector.wakeup();
+            serverSocketChannel.close();
             readSelector.close();
             writeSelector.close();
-            serverSocketChannel.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -73,7 +80,6 @@ public class NonBlockingServer extends Server {
                 clientChannel.configureBlocking(false);
 
                 readerLock.lock();
-                System.out.println("Waking up");
                 readSelector.wakeup();
                 clientChannel.register(readSelector, SelectionKey.OP_READ,
                         new Client(clientChannel, gatherer));
@@ -91,10 +97,6 @@ public class NonBlockingServer extends Server {
         private final List<ByteBuffer> input = new ArrayList<>();
         private final List<ClientTaskBuffer> output = new ArrayList<>();
 
-        {
-            input.add(ByteBuffer.allocate(BUFFER_SIZE));
-        }
-
         private final SocketChannel channel;
         private final MeasurementsGatherer gatherer;
 
@@ -108,30 +110,37 @@ public class NonBlockingServer extends Server {
         }
 
         void readInput() throws IOException {
-            System.out.println("Reading!");
-            channel.read(readBuffer);
-            readBuffer.flip();
-
-            int bufSize = readBuffer.remaining();
-            System.out.println(bufSize);
-            for (int i = 0; i < bufSize; i++) {
-                ByteBuffer lastBuffer = input.get(input.size() - 1);
-
-                byte b = readBuffer.get();
-
-                if (i < 4) {
-                    String s1 = String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0');
-                    System.out.println(s1);
-                }
-                if (lastBuffer.hasRemaining()) {
-                    lastBuffer.put(b);
-                } else {
-                    ByteBuffer newLast = ByteBuffer.allocate(BUFFER_SIZE);
-                    newLast.put(b);
-                    input.add(newLast);
-                }
+            if (input.isEmpty()) {
+                input.add(ByteBuffer.allocate(BUFFER_SIZE));
             }
-            readBuffer.compact();
+
+            while (channel.read(readBuffer) > 0) {
+                while (channel.read(readBuffer) > 0) {
+                }
+
+                readBuffer.flip();
+
+                int bufSize = readBuffer.remaining();
+
+                for (int i = 0; i < bufSize; i++) {
+                    ByteBuffer lastBuffer = input.get(input.size() - 1);
+
+                    byte b = readBuffer.get();
+
+//                if (i < 4) {
+//                    String s1 = String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0');
+//                    System.out.println(s1);
+//                }
+                    if (lastBuffer.hasRemaining()) {
+                        lastBuffer.put(b);
+                    } else {
+                        ByteBuffer newLast = ByteBuffer.allocate(BUFFER_SIZE);
+                        newLast.put(b);
+                        input.add(newLast);
+                    }
+                }
+                readBuffer.compact();
+            }
         }
 
         private int parseVarLen(byte a, byte b, byte c, byte d) {
@@ -167,7 +176,10 @@ public class NonBlockingServer extends Server {
         }
 
 
-        Optional<ServerProtocol.SortRequest> getSortRequest() {
+        Optional<ServerProtocol.SortRequest> getSortRequest() throws IOException {
+            System.out.println("Trying to fetch sort request: " + input.size() + " "
+                    + (input.size() != 0 ? input.get(0).position() : "NO"));
+
             if (input.size() == 0 || input.get(0).position() < 4) {
                 return Optional.empty();
             }
@@ -177,13 +189,16 @@ public class NonBlockingServer extends Server {
 
             int sizeOfMessage = parseVarLen(buffer.get(0), buffer.get(1), buffer.get(2), buffer.get(3));
 
-            boolean hasRequest = input.stream().mapToInt(Buffer::capacity).sum() >= sizeOfMessage;
+            buffer.compact();
+
+            boolean hasRequest = input.stream().mapToInt(Buffer::position).sum() >= sizeOfMessage;
+            System.out.println(input.stream().mapToInt(Buffer::position).sum() + " " + sizeOfMessage);
 
             if (!hasRequest) {
-                buffer.compact();
                 return Optional.empty();
             }
 
+            buffer.flip();
             ByteBuffer requestAsBytes = ByteBuffer.allocate(sizeOfMessage);
 
             while (requestAsBytes.hasRemaining()) {
@@ -202,29 +217,22 @@ public class NonBlockingServer extends Server {
                 input.remove(0);
             }
 
-            try {
-                return Optional.of(ServerProtocol.SortRequest.parseDelimitedFrom(
-                        new ByteArrayInputStream(requestAsBytes.array())));
-            } catch (IOException e) {
-                e.printStackTrace();
-                return Optional.empty();
-            }
+            return Optional.of(ServerProtocol.SortRequest.parseDelimitedFrom(
+                    new ByteArrayInputStream(requestAsBytes.array())));
         }
 
-        void addToOutput(int clientId, int taskId, List<Integer> values) {
+        void addToOutput(int clientId, int taskId, List<Integer> values) throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-            try {
-                ServerProtocol.SortResponse.newBuilder()
-                        .setTaskId(taskId)
-                        .setN(values.size())
-                        .addAllValues(values).build().writeDelimitedTo(out);
-            } catch (IOException e) {
-                return;
-            }
+            ServerProtocol.SortResponse.newBuilder()
+                    .setTaskId(taskId)
+                    .setN(values.size())
+                    .addAllValues(values).build().writeDelimitedTo(out);
+
+            byte[] res = out.toByteArray();
 
             output.add(new ClientTaskBuffer(new ClientTask(clientId, taskId),
-                    ByteBuffer.wrap(out.toByteArray())));
+                    ByteBuffer.allocate(res.length).put(res)));
         }
 
         void writeOutput() throws IOException {
@@ -238,12 +246,12 @@ public class NonBlockingServer extends Server {
 
             ByteBuffer buffer = clientTaskBuffer.buffer;
             buffer.flip();
-            channel.write(buffer);
+            while (channel.write(buffer) > 0) {
+            }
             buffer.compact();
 
             if (buffer.position() == 0) {
                 output.remove(0);
-                System.out.println("Processed client!");
             }
         }
     }
@@ -256,10 +264,10 @@ public class NonBlockingServer extends Server {
                 readerLock.unlock();
 
                 try {
-                    System.out.println("Blocking");
                     readSelector.select();
                 } catch (IOException e) {
-                    return;
+                    e.printStackTrace();
+                    continue;
                 }
 
                 Set<SelectionKey> keys = readSelector.selectedKeys();
@@ -271,21 +279,27 @@ public class NonBlockingServer extends Server {
                     SelectionKey key = it.next();
 
                     if (key.isReadable()) {
-                        Client client = (Client) key.attachment();
-                        try {
-                            client.readInput();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                        int counter = 0;
+                        while (counter < 10) {
+                            Client client = (Client) key.attachment();
+                            try {
+                                client.readInput();
 
-                        Optional<ServerProtocol.SortRequest> requestO = client.getSortRequest();
+                                Optional<ServerProtocol.SortRequest> requestO = client.getSortRequest();
 
-                        if (requestO.isPresent()) {
-                            ServerProtocol.SortRequest request = requestO.get();
-                            System.out.println("Read message.");
-                            client.clientStarts.put(new ClientTask(request.getClientId(), request.getTaskId()),
-                                    gatherer.time());
-                            taskPool.submit(new Task(client, request));
+                                while (requestO.isPresent()) {
+                                    ServerProtocol.SortRequest request = requestO.get();
+                                    System.out.println("Read message.");
+                                    System.out.println(numberOfMessages.incrementAndGet());
+                                    client.clientStarts.put(new ClientTask(request.getClientId(), request.getTaskId()),
+                                            gatherer.time());
+                                    taskPool.submit(new Task(client, request));
+                                    requestO = client.getSortRequest();
+                                    counter++;
+                                }
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
 
@@ -309,7 +323,6 @@ public class NonBlockingServer extends Server {
                 }
 
                 Set<SelectionKey> keys = writeSelector.selectedKeys();
-
                 Iterator<SelectionKey> it = keys.iterator();
 
                 while (it.hasNext()) {
@@ -348,7 +361,7 @@ public class NonBlockingServer extends Server {
             this.client = client;
             this.clientId = request.getClientId();
             this.taskId = request.getTaskId();
-            this.values = request.getValuesList();
+            this.values = new ArrayList<>(request.getValuesList());
         }
 
         @Override
@@ -358,15 +371,18 @@ public class NonBlockingServer extends Server {
             gatherer.measureRequest(requestStart, clientId);
 
             synchronized (client.output) {
-                client.addToOutput(clientId, taskId, result);
-
                 try {
-                    // TODO: дебажим write
-                    writerLock.lock();
-                    writeSelector.wakeup();
-                    client.channel.register(writeSelector, SelectionKey.OP_WRITE, client);
-                    writerLock.unlock();
-                } catch (ClosedChannelException e) {
+                    client.addToOutput(clientId, taskId, result);
+
+                    try {
+                        writerLock.lock();
+                        writeSelector.wakeup();
+                        client.channel.register(writeSelector, SelectionKey.OP_WRITE, client);
+                        writerLock.unlock();
+                    } catch (ClosedChannelException e) {
+                        e.printStackTrace();
+                    }
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }

@@ -3,9 +3,7 @@ package ru.ifmo.java.one.kek;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Client implements Runnable {
@@ -42,14 +40,14 @@ public class Client implements Runnable {
             for (int i = 0; i < numberOfRequests; i++) {
                 System.out.println("Ready to send!");
 
-                ByteArrayOutputStream a = new ByteArrayOutputStream();
-                requestBuilder.setTaskId(i).build().writeDelimitedTo(a);
-
-                System.out.println(a.toByteArray().length);
-                for (byte b : a.toByteArray()) {
-                    String s1 = String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0');
-                    System.out.println(s1);
-                }
+//                ByteArrayOutputStream a = new ByteArrayOutputStream();
+//                requestBuilder.setTaskId(i).build().writeDelimitedTo(a);
+//
+//                System.out.println(a.toByteArray().length);
+//                for (byte b : a.toByteArray()) {
+//                    String s1 = String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0');
+//                    System.out.println(s1);
+//                }
 
                 requestBuilder.setTaskId(i).build().writeDelimitedTo(socket.getOutputStream());
                 starts.add(gatherer.time());
@@ -62,7 +60,11 @@ public class Client implements Runnable {
             while (counter > 0) {
                 ServerProtocol.SortResponse response = ServerProtocol.SortResponse.parseDelimitedFrom(socket.getInputStream());
                 gatherer.measureServerResponse(starts.get(response.getTaskId()), clientId);
+//                List<Integer> res = new ArrayList<>(requestBuilder.setTaskId(0).build().getValuesList());
+//                res.sort(Comparator.naturalOrder());
+//                assert Arrays.equals(res.toArray(), response.getValuesList().toArray());
                 counter--;
+                System.out.println("For " + clientId + " left " + counter);
             }
 
             socket.close();

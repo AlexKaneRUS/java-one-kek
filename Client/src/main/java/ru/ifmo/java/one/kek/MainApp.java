@@ -7,10 +7,10 @@ import java.util.concurrent.ExecutionException;
 
 public class MainApp {
     public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
-        Map<StepConfig, StepMeasurements> result = new Tester(new InclusiveRange<>(1, 1, 1),
-                   new InclusiveRange<>(128, 128, 1),
+        Map<StepConfig, StepMeasurements> result = new Tester(new InclusiveRange<>(50, 50, 5),
+                   new InclusiveRange<>(10000, 10000, 1),
                    new InclusiveRange<>(50L, 50L, 1L),
-                   1, MainAppServerProtocol.TypeOfServer.NON_BLOCKING).conductTesting("localhost");
+                   10, MainAppServerProtocol.TypeOfServer.NON_BLOCKING).conductTesting("localhost");
 
         result.entrySet().stream().sorted(Comparator.comparing(x -> x.getKey().numberOfClients))
                 .forEach(x -> System.out.println(x.getKey().numberOfClients +
