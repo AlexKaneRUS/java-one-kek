@@ -24,7 +24,7 @@ public class BlockingServer extends Server {
     }
 
     public void run() {
-        while (true) {
+        while (!Thread.interrupted()) {
             try {
                 Socket socket = serverSocket.accept();
                 clients.add(socket);
@@ -49,7 +49,7 @@ public class BlockingServer extends Server {
 
         @Override
         public void run() {
-            while (true) {
+            while (!Thread.interrupted()) {
                 ServerProtocol.SortRequest request;
                 long clientStart;
                 try {
@@ -101,6 +101,13 @@ public class BlockingServer extends Server {
 
     @Override
     public void close() {
+        pool.shutdown();
+        taskPool.shutdown();
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         clients.forEach(x -> {
             try {
                 x.close();
@@ -108,8 +115,6 @@ public class BlockingServer extends Server {
                 e.printStackTrace();
             }
         });
-        pool.shutdown();
-        taskPool.shutdown();
     }
 }
 

@@ -34,6 +34,10 @@ public class MainAppServer {
                     System.out.println("Setting up Blocking server.");
                     server = new BlockingServer(new MeasurementsGatherer(), Constants.SERVER_PORT + counter);
                     break;
+                case NON_BLOCKING:
+                    System.out.println("Setting up Non-blocking server.");
+                    server = new NonBlockingServer(new MeasurementsGatherer(), Constants.SERVER_PORT + counter);
+                    break;
                 default:
                     continue;
             }

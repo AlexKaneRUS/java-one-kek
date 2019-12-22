@@ -1,5 +1,6 @@
 package ru.ifmo.java.one.kek;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -40,6 +41,16 @@ public class Client implements Runnable {
 
             for (int i = 0; i < numberOfRequests; i++) {
                 System.out.println("Ready to send!");
+
+                ByteArrayOutputStream a = new ByteArrayOutputStream();
+                requestBuilder.setTaskId(i).build().writeDelimitedTo(a);
+
+                System.out.println(a.toByteArray().length);
+                for (byte b : a.toByteArray()) {
+                    String s1 = String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0');
+                    System.out.println(s1);
+                }
+
                 requestBuilder.setTaskId(i).build().writeDelimitedTo(socket.getOutputStream());
                 starts.add(gatherer.time());
                 System.out.println("Sent: " + i);

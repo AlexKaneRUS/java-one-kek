@@ -7,7 +7,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -22,7 +21,7 @@ public class RobustServer extends Server {
     }
 
     public void run() {
-        while (true) {
+        while (!Thread.interrupted()) {
             try {
                 Socket socket = serverSocket.accept();
                 clients.add(socket);
@@ -44,7 +43,7 @@ public class RobustServer extends Server {
 
         @Override
         public void run() {
-            while (true) {
+            while (!Thread.interrupted()) {
                 ServerProtocol.SortRequest request;
                 long clientStart;
                 try {
@@ -76,6 +75,7 @@ public class RobustServer extends Server {
 
     @Override
     public void close() {
+        pool.shutdown();
         clients.forEach(x -> {
             try {
                 x.close();
@@ -83,6 +83,10 @@ public class RobustServer extends Server {
                 e.printStackTrace();
             }
         });
-        pool.shutdown();
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
