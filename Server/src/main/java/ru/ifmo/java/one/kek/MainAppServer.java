@@ -56,6 +56,7 @@ public class MainAppServer {
                 e.printStackTrace();
             }
             finally {
+                server.close();
                 serverThread.interrupt();
                 mainAppClient.close();
             }

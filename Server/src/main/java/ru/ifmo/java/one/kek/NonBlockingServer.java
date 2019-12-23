@@ -18,7 +18,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 public class NonBlockingServer extends Server {
-    private final ExecutorService taskPool = Executors.newFixedThreadPool(4);
+    private final ExecutorService taskPool = Executors.newFixedThreadPool(13);
 
     private final ServerSocketChannel serverSocketChannel;
     private final Selector readSelector;
@@ -31,6 +31,7 @@ public class NonBlockingServer extends Server {
     private final Lock writerLock = new ReentrantLock();
 
     private AtomicInteger numberOfMessages = new AtomicInteger(0);
+    private AtomicInteger numberOfMessages1 = new AtomicInteger(0);
 
     public NonBlockingServer(MeasurementsGatherer gatherer, int port) throws IOException {
         super(gatherer);
@@ -87,6 +88,7 @@ public class NonBlockingServer extends Server {
 
             } catch (IOException e) {
                 e.printStackTrace();
+                return;
             }
         }
     }
@@ -163,6 +165,8 @@ public class NonBlockingServer extends Server {
                 messageBuffer = ByteBuffer.allocate(messageSize - (4 - len));
 
                 messageSizeBuffer.compact();
+
+                return Optional.empty();
             }
 
             channel.read(messageBuffer);
@@ -210,11 +214,11 @@ public class NonBlockingServer extends Server {
 
             ByteBuffer buffer = clientTaskBuffer.buffer;
             buffer.flip();
-            while (channel.write(buffer) > 0) {
-            }
+            channel.write(buffer);
             buffer.compact();
 
             if (buffer.position() == 0) {
+                System.out.println("Sent");
                 output.remove(0);
             }
         }
@@ -231,7 +235,7 @@ public class NonBlockingServer extends Server {
                     readSelector.select();
                 } catch (IOException e) {
                     e.printStackTrace();
-                    continue;
+                    return;
                 }
 
                 Set<SelectionKey> keys = readSelector.selectedKeys();
@@ -245,17 +249,17 @@ public class NonBlockingServer extends Server {
                         try {
                             Optional<ServerProtocol.SortRequest> requestO = client.getSortRequest();
 
-                            while (requestO.isPresent()) {
+                            if (requestO.isPresent()) {
                                 ServerProtocol.SortRequest request = requestO.get();
                                 System.out.println("Read message.");
                                 System.out.println(numberOfMessages.incrementAndGet());
                                 client.clientStarts.put(new ClientTask(request.getClientId(), request.getTaskId()),
                                         gatherer.time());
                                 taskPool.submit(new Task(client, request));
-                                requestO = client.getSortRequest();
                             }
                         } catch (IOException e) {
                             e.printStackTrace();
+                            return;
                         }
                     }
 
@@ -275,6 +279,7 @@ public class NonBlockingServer extends Server {
                 try {
                     writeSelector.select();
                 } catch (IOException e) {
+                    e.printStackTrace();
                     return;
                 }
 
@@ -295,6 +300,7 @@ public class NonBlockingServer extends Server {
                                     client.writeOutput();
                                 } catch (IOException e) {
                                     e.printStackTrace();
+                                    return;
                                 }
                             }
                         }

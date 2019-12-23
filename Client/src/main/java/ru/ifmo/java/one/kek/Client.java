@@ -38,7 +38,7 @@ public class Client implements Runnable {
             List<Long> starts = new ArrayList<>();
 
             for (int i = 0; i < numberOfRequests; i++) {
-                System.out.println("Ready to send!");
+//                System.out.println("Ready to send!");
 
 //                ByteArrayOutputStream a = new ByteArrayOutputStream();
 //                requestBuilder.setTaskId(i).build().writeDelimitedTo(a);
@@ -51,7 +51,6 @@ public class Client implements Runnable {
 
                 requestBuilder.setTaskId(i).build().writeDelimitedTo(socket.getOutputStream());
                 starts.add(gatherer.time());
-                System.out.println("Sent: " + i);
                 Thread.sleep(delta);
             }
 
@@ -64,7 +63,7 @@ public class Client implements Runnable {
 //                res.sort(Comparator.naturalOrder());
 //                assert Arrays.equals(res.toArray(), response.getValuesList().toArray());
                 counter--;
-                System.out.println("For " + clientId + " left " + counter);
+//                System.out.println("For " + clientId + " left " + counter);
             }
 
             socket.close();

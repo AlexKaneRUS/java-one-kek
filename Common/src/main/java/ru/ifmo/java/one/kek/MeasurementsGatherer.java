@@ -13,7 +13,7 @@ public class MeasurementsGatherer {
     private ExecutorService measurer = Executors.newSingleThreadExecutor();
 
     long time() {
-        return System.nanoTime();
+        return System.currentTimeMillis();
     }
 
     void measureRequest(long start, int clientId) {
@@ -29,7 +29,8 @@ public class MeasurementsGatherer {
     }
 
     private void measureInner(long start, int clientId, List<Measurement> measurements) {
-        measurer.submit(() -> measurements.add(new Measurement(start, time(), clientId)));
+        long end = time();
+        measurer.submit(() -> measurements.add(new Measurement(start, end, clientId)));
     }
 
     List<Measurement> getRequestMeasurements() {

@@ -9,11 +9,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class RobustServer extends Server {
     private final ExecutorService pool = Executors.newCachedThreadPool();
     private final ServerSocket serverSocket;
     private final List<Socket> clients = new ArrayList<>();
+
+    private final AtomicInteger i = new AtomicInteger(0);
 
     public RobustServer(MeasurementsGatherer gatherer, int port) throws IOException {
         super(gatherer);
@@ -28,6 +31,7 @@ public class RobustServer extends Server {
                 pool.submit(new RobustWorker(socket));
             } catch (IOException e) {
                 e.printStackTrace();
+                return;
             }
         }
     }
@@ -49,11 +53,7 @@ public class RobustServer extends Server {
                 try {
                     request = ServerProtocol.SortRequest.parseDelimitedFrom(input);
                     clientStart = gatherer.time();
-                } catch (IOException e) {
-                    break;
-                }
 
-                try {
                     long requestStart = gatherer.time();
                     List<Integer> values = new ArrayList<>(request.getValuesList());
                     List<Integer> result = Algorithms.sort(values);
@@ -65,9 +65,10 @@ public class RobustServer extends Server {
                             .addAllValues(result)
                             .setTaskId(request.getTaskId())
                             .build().writeDelimitedTo(output);
-                    System.out.println("Processed client!");
+                    System.out.println(i.incrementAndGet());
                 } catch (IOException e) {
                     e.printStackTrace();
+                    return;
                 }
             }
         }

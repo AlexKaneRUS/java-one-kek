@@ -13,7 +13,7 @@ import java.util.concurrent.Executors;
 
 public class BlockingServer extends Server {
     private final ExecutorService pool = Executors.newCachedThreadPool();
-    private final ExecutorService taskPool = Executors.newFixedThreadPool(4);
+    private final ExecutorService taskPool = Executors.newFixedThreadPool(13);
 
     private final ServerSocket serverSocket;
     private final List<Socket> clients = new ArrayList<>();
@@ -31,6 +31,7 @@ public class BlockingServer extends Server {
                 pool.submit(new BlockingWorker(socket, taskPool));
             } catch (IOException e) {
                 e.printStackTrace();
+                return;
             }
         }
     }
@@ -56,7 +57,7 @@ public class BlockingServer extends Server {
                     request = ServerProtocol.SortRequest.parseDelimitedFrom(input);
                     clientStart = gatherer.time();
                 } catch (IOException e) {
-                    break;
+                    return;
                 }
 
                 pool.submit(new Task(request.getValuesList(), request.getClientId(), request.getTaskId(), clientStart));
