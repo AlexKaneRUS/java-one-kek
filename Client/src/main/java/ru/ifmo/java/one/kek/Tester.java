@@ -49,7 +49,7 @@ public class Tester {
 
             endTesting(socket);
         } catch (IOException | InterruptedException | ExecutionException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
 
         return result;
