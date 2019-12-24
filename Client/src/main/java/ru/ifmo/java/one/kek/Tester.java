@@ -41,8 +41,6 @@ public class Tester {
             for (int numberOfClients = numberOfClientsRange.left; numberOfClients <= numberOfClientsRange.right; numberOfClients += numberOfClientsRange.step) {
                 for (int numberOfElements = numberOfElementsRange.left; numberOfElements <= numberOfElementsRange.right; numberOfElements += numberOfElementsRange.step) {
                     for (long delta = deltaRange.left; delta <= deltaRange.right; delta += deltaRange.step) {
-                        System.out.println("Running config: nc=" + numberOfClients + " ne="
-                                + numberOfElements + " delta=" + delta);
                         result.put(new StepConfig(numberOfClients, numberOfElements, delta),
                                 conductStep(numberOfElements, numberOfClients, delta, host, socket));
                     }
@@ -83,7 +81,8 @@ public class Tester {
 
         return new StepMeasurements(requestMeasurements.stream().mapToLong(x -> x.getEnd() - x.getStart()).average().getAsDouble(),
                 clientMeasurements.stream().mapToLong(x -> x.getEnd() - x.getStart()).average().getAsDouble(),
-                serverResponseMeasurements.stream().mapToLong(x -> x.getEnd() - x.getStart()).average().getAsDouble());
+                serverResponseMeasurements.stream().mapToLong(x -> x.getEnd() - x.getStart()).map(x -> x / numberOfRequests).average()
+                        .getAsDouble());
     }
 
     private List<MeasurementsGatherer.Measurement> filterRelevantMeasurements(List<MeasurementsGatherer.Measurement> measurements) {

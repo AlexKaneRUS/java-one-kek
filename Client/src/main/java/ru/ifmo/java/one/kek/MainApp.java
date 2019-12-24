@@ -15,33 +15,33 @@ public class MainApp {
         }
 
         for (MainAppServerProtocol.TypeOfServer tos : MainAppServerProtocol.TypeOfServer.values()) {
-            if (tos == MainAppServerProtocol.TypeOfServer.UNRECOGNIZED) {
-                break;
+            if (tos != MainAppServerProtocol.TypeOfServer.NON_BLOCKING) {
+                continue;
             }
 
             System.out.println("Server type: " + tos.toString());
 
-            System.out.println("Variating number of clients.");
-            Map<StepConfig, StepMeasurements> clientsResult = new Tester(new InclusiveRange<>(1, 26, 2),
-                    new InclusiveRange<>(10000, 10000, 2000),
-                    new InclusiveRange<>(15L, 15L, 5L),
-                    7, tos).conductTesting(host);
+//            System.out.println("CLIENTS");
+//            Map<StepConfig, StepMeasurements> clientsResult = new Tester(new InclusiveRange<>(1, 29, 2),
+//                    new InclusiveRange<>(10000, 10000, 2000),
+//                    new InclusiveRange<>(15L, 15L, 5L),
+//                    7, tos).conductTesting(host);
+//
+//            printResult(clientsResult);
 
-            printResult(clientsResult);
+//            System.out.println("ELEMENTS");
+//            Map<StepConfig, StepMeasurements> elementsResult = new Tester(new InclusiveRange<>(11, 11, 5),
+//                    new InclusiveRange<>(1000, 18000, 1000),
+//                    new InclusiveRange<>(15L, 15L, 5L),
+//                    7, tos).conductTesting(host);
+//
+//            printResult(elementsResult);
 
-            System.out.println("Variating number of elements.");
-            Map<StepConfig, StepMeasurements> elementsResult = new Tester(new InclusiveRange<>(11, 11, 5),
-                    new InclusiveRange<>(1000, 18000, 1000),
-                    new InclusiveRange<>(15L, 15L, 5L),
-                    7, tos).conductTesting(host);
-
-            printResult(elementsResult);
-
-            System.out.println("Variating delta.");
+            System.out.println("DELTA");
             Map<StepConfig, StepMeasurements> deltaResult = new Tester(new InclusiveRange<>(11, 11, 5),
                     new InclusiveRange<>(10000, 10000, 2000),
-                    new InclusiveRange<>(0L, 30L, 3L),
-                    7, tos).conductTesting(host);
+                    new InclusiveRange<>(0L, 50L, 3L),
+                    10, tos).conductTesting(host);
 
             printResult(deltaResult);
         }
