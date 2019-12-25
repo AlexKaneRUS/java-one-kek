@@ -33,6 +33,9 @@ public class Tester {
     }
 
     public Map<StepConfig, StepMeasurements> conductTesting(String host) {
+        System.out.println(numberOfClientsRange.left + ";" + numberOfClientsRange.right + ";" + numberOfClientsRange.step + ";" +
+                numberOfElementsRange.left + ";" + numberOfElementsRange.right + ";" + numberOfElementsRange.step + ";" +
+                deltaRange.left + ";" + deltaRange.right + ";" + deltaRange.step + ";" + numberOfRequests);
         Map<StepConfig, StepMeasurements> result = new HashMap<>();
 
         try (Socket socket = new Socket(host, Constants.MAIN_APP_SERVER_PORT)) {

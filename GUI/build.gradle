@@ -2,11 +2,12 @@ dependencies {
     implementation(project(":Client"))
     implementation(project(":Common"))
     implementation('com.jidesoft:jide-oss:3.6.18')
+    implementation('org.knowm.xchart:xchart:3.6.0')
 }
 
 jar {
     manifest {
-        attributes 'Main-Class': 'ru.ifmo.java.one.kek.MainApp'
+        attributes 'Main-Class': 'ru.ifmo.java.one.kek.GUI'
     }
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
