@@ -15,10 +15,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -107,7 +105,20 @@ public class GUI {
         }
 
         ParametersFrame() {
-            setSize(1400, 800);
+            setSize(700, 400);
+
+            // Get current screen size
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+
+            // Get x coordinate on screen for make JWindow locate at center
+            int x = (screenSize.width - getSize().width) / 2;
+
+            // Get y coordinate on screen for make JWindow locate at center
+            int y = (screenSize.height - getSize().height) / 2;
+
+            // Set new location for JWindow
+            setLocation(x, y);
+
             setLayout(new GridBagLayout());
 
             setupArchitectures();
@@ -404,74 +415,99 @@ public class GUI {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                try {
-                    InclusiveRange<Integer> cl;
-                    InclusiveRange<Integer> el;
-                    InclusiveRange<Long> d;
+                InclusiveRange<Integer> cl;
+                InclusiveRange<Integer> el;
+                InclusiveRange<Long> d;
 
-                    String name;
-                    Function<StepConfig, Integer> getter;
+                String name;
+                Function<StepConfig, Integer> getter;
 
-                    switch (chosenParameter[0]) {
-                        case 0:
-                            cl = new InclusiveRange<>(nClients.getLowValue(), nClients.getHighValue(),
-                                    (Integer) stepNClients.getValue());
-                            el = new InclusiveRange<>((Integer) dNElems.getValue(), (Integer) dNElems.getValue(),
-                                    1);
-                            d = new InclusiveRange<>(new Long((Integer) dDelta.getValue()),
-                                    new Long((Integer) dDelta.getValue()),
-                                    1L);
-                            name = "Number of clients";
-                            getter = x -> x.numberOfClients;
-                            break;
-                        case 1:
-                            cl = new InclusiveRange<>((Integer) dNClients.getValue(), (Integer) dNClients.getValue(),
-                                    1);
-                            el = new InclusiveRange<>(nElems.getLowValue(), nElems.getHighValue(),
-                                    (Integer) stepNElems.getValue());
-                            d = new InclusiveRange<>(new Long((Integer) dDelta.getValue()),
-                                    new Long((Integer) dDelta.getValue()),
-                                    1L);
-                            name = "Number of elements";
-                            getter = x -> x.numberOfElements;
-                            break;
-                        case 2:
-                            cl = new InclusiveRange<>((Integer) dNClients.getValue(), (Integer) dNClients.getValue(),
-                                    1);
-                            el = new InclusiveRange<>(nElems.getLowValue(), nElems.getHighValue(),
-                                    1);
-                            d = new InclusiveRange<>((long) delta.getLowValue(), (long) delta.getHighValue(),
-                                    new Long((Integer) stepDelta.getValue()));
-                            name = "Delta";
-                            getter = x -> (int) x.delta;
-                            break;
-                        default:
-                            throw new RuntimeException();
+                switch (chosenParameter[0]) {
+                    case 0:
+                        cl = new InclusiveRange<>(nClients.getLowValue(), nClients.getHighValue(),
+                                (Integer) stepNClients.getValue());
+                        el = new InclusiveRange<>((Integer) dNElems.getValue(), (Integer) dNElems.getValue(),
+                                1);
+                        d = new InclusiveRange<>(new Long((Integer) dDelta.getValue()),
+                                new Long((Integer) dDelta.getValue()),
+                                1L);
+                        name = "Number of clients";
+                        getter = x -> x.numberOfClients;
+                        break;
+                    case 1:
+                        cl = new InclusiveRange<>((Integer) dNClients.getValue(), (Integer) dNClients.getValue(),
+                                1);
+                        el = new InclusiveRange<>(nElems.getLowValue(), nElems.getHighValue(),
+                                (Integer) stepNElems.getValue());
+                        d = new InclusiveRange<>(new Long((Integer) dDelta.getValue()),
+                                new Long((Integer) dDelta.getValue()),
+                                1L);
+                        name = "Number of elements";
+                        getter = x -> x.numberOfElements;
+                        break;
+                    case 2:
+                        cl = new InclusiveRange<>((Integer) dNClients.getValue(), (Integer) dNClients.getValue(),
+                                1);
+                        el = new InclusiveRange<>(nElems.getLowValue(), nElems.getHighValue(),
+                                1);
+                        d = new InclusiveRange<>((long) delta.getLowValue(), (long) delta.getHighValue(),
+                                new Long((Integer) stepDelta.getValue()));
+                        name = "Delta";
+                        getter = x -> (int) x.delta;
+                        break;
+                    default:
+                        throw new RuntimeException();
+                }
+
+                from.dispatchEvent(new WindowEvent(from,
+                        WindowEvent.WINDOW_CLOSING));
+
+                Map<StepConfig, StepMeasurements> results = new HashMap<>();
+
+                new SwingWorker<Void, String>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        try {
+                            Tester tester = new Tester(cl, el, d, numberOfRequests.getValue(), tos[0]);
+                            results.putAll(tester.conductTesting(host));
+                        } catch (Throwable err) {
+                            for (Window window : Window.getWindows()) {
+                                if (window instanceof JDialog) {
+                                    window.dispose();
+                                }
+                            }
+
+                            JOptionPane.showMessageDialog(from, err.getMessage(),
+                                    "Error!", JOptionPane.ERROR_MESSAGE);
+                            err.printStackTrace();
+                        }
+
+                        return null;
                     }
 
-                    JWindow window = new JWindow();
-                    from.dispatchEvent(new WindowEvent(from,
-                            WindowEvent.WINDOW_CLOSING));
+                    @Override
+                    public void done() {
+                        if (!results.isEmpty()) {
+                            for (Window window : Window.getWindows()) {
+                                if (window instanceof JDialog) {
+                                    window.dispose();
+                                }
+                            }
 
-                    window.getContentPane().add(new JLabel(new ImageIcon(GUI.class.getResource("/inf.gif"))));
-                    window.setBounds(500, 150, 300, 200);
-                    window.setVisible(true);
+                            try {
+                                writeResults(results, cl, el, d);
+                            } catch (IOException ex) {
+                                ex.printStackTrace();
+                            }
 
-                    Tester tester = new Tester(cl, el, d, numberOfRequests.getValue(), tos[0]);
-                    Map<StepConfig, StepMeasurements> results = tester.conductTesting(host);
+                            showCharts(results, getter, name);
+                        }
+                    }
 
-                    window.setVisible(false);
-                    window.dispose();
+                }.execute();
 
-                    writeResults(results, cl, el, d);
-                    showCharts(results, getter, name);
-                } catch (Throwable err) {
-                    JOptionPane.showMessageDialog(from, err.getMessage(),
-                            "Error!", JOptionPane.ERROR_MESSAGE);
-                    err.printStackTrace();
-                    from.dispatchEvent(new WindowEvent(from,
-                            WindowEvent.WINDOW_CLOSING));
-                }
+                JOptionPane.showMessageDialog(from, "Getting your test results!",
+                        "Testing!", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(GUI.class.getResource("/inf.gif")));
             }
         }
     }
