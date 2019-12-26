@@ -1,18 +1,5 @@
 Server type: ROBUST
 Variating number of clients.
-Running config: nc=1 ne=10000 delta=15
-Running config: nc=3 ne=10000 delta=15
-Running config: nc=5 ne=10000 delta=15
-Running config: nc=7 ne=10000 delta=15
-Running config: nc=9 ne=10000 delta=15
-Running config: nc=11 ne=10000 delta=15
-Running config: nc=13 ne=10000 delta=15
-Running config: nc=15 ne=10000 delta=15
-Running config: nc=17 ne=10000 delta=15
-Running config: nc=19 ne=10000 delta=15
-Running config: nc=21 ne=10000 delta=15
-Running config: nc=23 ne=10000 delta=15
-Running config: nc=25 ne=10000 delta=15
 (1, 10000, 15) : (381.0, 380.57142857142856, 1823.5714285714287)
 (3, 10000, 15) : (386.8235294117647, 386.7647058823529, 13457.21052631579)
 (5, 10000, 15) : (577.0869565217391, 576.8695652173913, 2465.962962962963)
@@ -29,24 +16,6 @@ Running config: nc=25 ne=10000 delta=15
 (27, 10000, 15) : (517.4444444444445, 517.4305555555555, 6620.633333333333)
 (29, 10000, 15) : (516.36, 516.36, 6384.029411764706)
 Variating number of elements.
-Running config: nc=11 ne=1000 delta=15
-Running config: nc=11 ne=2000 delta=15
-Running config: nc=11 ne=3000 delta=15
-Running config: nc=11 ne=4000 delta=15
-Running config: nc=11 ne=5000 delta=15
-Running config: nc=11 ne=6000 delta=15
-Running config: nc=11 ne=7000 delta=15
-Running config: nc=11 ne=8000 delta=15
-Running config: nc=11 ne=9000 delta=15
-Running config: nc=11 ne=10000 delta=15
-Running config: nc=11 ne=11000 delta=15
-Running config: nc=11 ne=12000 delta=15
-Running config: nc=11 ne=13000 delta=15
-Running config: nc=11 ne=14000 delta=15
-Running config: nc=11 ne=15000 delta=15
-Running config: nc=11 ne=16000 delta=15
-Running config: nc=11 ne=17000 delta=15
-Running config: nc=11 ne=18000 delta=15
 (11, 1000, 15) : (6.107142857142857, 6.089285714285714, 93.10909090909091)
 (11, 6000, 15) : (96.33333333333333, 96.29629629629629, 448.0863636363636)
 (11, 17000, 15) : (712.2631578947369, 712.2631578947369, 1219.0751355538343)
@@ -66,17 +35,6 @@ Running config: nc=11 ne=18000 delta=15
 (11, 12000, 15) : (354.36842105263156, 354.36842105263156, 790.0684326710817)
 (11, 10000, 15) : (246.8421052631579, 246.8421052631579, 661.5026595744681)
 Variating delta.
-Running config: nc=11 ne=10000 delta=0
-Running config: nc=11 ne=10000 delta=3
-Running config: nc=11 ne=10000 delta=6
-Running config: nc=11 ne=10000 delta=9
-Running config: nc=11 ne=10000 delta=12
-Running config: nc=11 ne=10000 delta=15
-Running config: nc=11 ne=10000 delta=18
-Running config: nc=11 ne=10000 delta=21
-Running config: nc=11 ne=10000 delta=24
-Running config: nc=11 ne=10000 delta=27
-Running config: nc=11 ne=10000 delta=30
 (11, 10000, 36) : (525.8837209302326, 525.8255813953489, 4524.270981507823)
 (11, 10000, 3) : (466.14925373134326, 466.13432835820896, 4252.883720930233)
 (11, 10000, 12) : (493.63492063492066, 493.6190476190476, 3683.5009940357854)
@@ -97,19 +55,6 @@ Running config: nc=11 ne=10000 delta=30
 
 Server type: BLOCKING
 Variating number of clients.
-Running config: nc=1 ne=10000 delta=15
-Running config: nc=3 ne=10000 delta=15
-Running config: nc=5 ne=10000 delta=15
-Running config: nc=7 ne=10000 delta=15
-Running config: nc=9 ne=10000 delta=15
-Running config: nc=11 ne=10000 delta=15
-Running config: nc=13 ne=10000 delta=15
-Running config: nc=15 ne=10000 delta=15
-Running config: nc=17 ne=10000 delta=15
-Running config: nc=19 ne=10000 delta=15
-Running config: nc=21 ne=10000 delta=15
-Running config: nc=23 ne=10000 delta=15
-Running config: nc=25 ne=10000 delta=15
 (1, 10000, 15) : (464.57142857142856, 459.42857142857144, 1767.7142857142858)
 (3, 10000, 15) : (568.0588235294117, 554.0, 1375.2631578947369)
 (5, 10000, 15) : (596.0416666666666, 584.7407407407408, 2379.9166666666665)
@@ -126,24 +71,6 @@ Running config: nc=25 ne=10000 delta=15
 (27, 10000, 15) : (581.7021276595744, 437.47222222222223, 4660.0)
 (29, 10000, 15) : (735.8656716417911, 524.5333333333333, 5078.296875)
 Variating number of elements.
-Running config: nc=11 ne=1000 delta=15
-Running config: nc=11 ne=2000 delta=15
-Running config: nc=11 ne=3000 delta=15
-Running config: nc=11 ne=4000 delta=15
-Running config: nc=11 ne=5000 delta=15
-Running config: nc=11 ne=6000 delta=15
-Running config: nc=11 ne=7000 delta=15
-Running config: nc=11 ne=8000 delta=15
-Running config: nc=11 ne=9000 delta=15
-Running config: nc=11 ne=10000 delta=15
-Running config: nc=11 ne=11000 delta=15
-Running config: nc=11 ne=12000 delta=15
-Running config: nc=11 ne=13000 delta=15
-Running config: nc=11 ne=14000 delta=15
-Running config: nc=11 ne=15000 delta=15
-Running config: nc=11 ne=16000 delta=15
-Running config: nc=11 ne=17000 delta=15
-Running config: nc=11 ne=18000 delta=15
 (11, 15000, 15) : (1305.1379310344828, 566.0714285714286, 926.5962230215828)
 (11, 14000, 15) : (985.9545454545455, 487.75, 849.6075581395348)
 (11, 3000, 15) : (30.511111111111113, 30.333333333333332, 182.03783783783783)
@@ -163,17 +90,6 @@ Running config: nc=11 ne=18000 delta=15
 (11, 16000, 15) : (2250.6052631578946, 917.9473684210526, 1042.983291562239)
 (11, 4000, 15) : (55.1025641025641, 47.666666666666664, 255.88389513108615)
 Variating delta.
-Running config: nc=11 ne=10000 delta=0
-Running config: nc=11 ne=10000 delta=3
-Running config: nc=11 ne=10000 delta=6
-Running config: nc=11 ne=10000 delta=9
-Running config: nc=11 ne=10000 delta=12
-Running config: nc=11 ne=10000 delta=15
-Running config: nc=11 ne=10000 delta=18
-Running config: nc=11 ne=10000 delta=21
-Running config: nc=11 ne=10000 delta=24
-Running config: nc=11 ne=10000 delta=27
-Running config: nc=11 ne=10000 delta=30
 (11, 10000, 9) : (777.0746268656717, 505.3492063492063, 5421.413705583756)
 (11, 10000, 45) : (836.0483870967741, 449.0175438596491, 4653.383618149676)
 (11, 10000, 33) : (1010.1014492753624, 556.5454545454545, 4683.871674491393)
@@ -194,19 +110,6 @@ Running config: nc=11 ne=10000 delta=30
 
 Server type: NON_BLOCKING
 Variating number of clients.
-Running config: nc=1 ne=10000 delta=15
-Running config: nc=3 ne=10000 delta=15
-Running config: nc=5 ne=10000 delta=15
-Running config: nc=7 ne=10000 delta=15
-Running config: nc=9 ne=10000 delta=15
-Running config: nc=11 ne=10000 delta=15
-Running config: nc=13 ne=10000 delta=15
-Running config: nc=15 ne=10000 delta=15
-Running config: nc=17 ne=10000 delta=15
-Running config: nc=19 ne=10000 delta=15
-Running config: nc=21 ne=10000 delta=15
-Running config: nc=23 ne=10000 delta=15
-Running config: nc=25 ne=10000 delta=15
 (1, 10000, 15) : (478.0, 430.7142857142857, 764.1428571428571)
 (3, 10000, 15) : (621.6666666666666, 518.7333333333333, 809.0588235294117)
 (5, 10000, 15) : (704.375, 564.5, 1158.2380952380952)
@@ -223,24 +126,6 @@ Running config: nc=25 ne=10000 delta=15
 (27, 10000, 15) : (1004.551724137931, 515.4313725490196, 4311.2040816326535)
 (29, 10000, 15) : (801.9285714285714, 572.0833333333334, 4683.756756756757)
 Variating number of elements.
-Running config: nc=11 ne=1000 delta=15
-Running config: nc=11 ne=2000 delta=15
-Running config: nc=11 ne=3000 delta=15
-Running config: nc=11 ne=4000 delta=15
-Running config: nc=11 ne=5000 delta=15
-Running config: nc=11 ne=6000 delta=15
-Running config: nc=11 ne=7000 delta=15
-Running config: nc=11 ne=8000 delta=15
-Running config: nc=11 ne=9000 delta=15
-Running config: nc=11 ne=10000 delta=15
-Running config: nc=11 ne=11000 delta=15
-Running config: nc=11 ne=12000 delta=15
-Running config: nc=11 ne=13000 delta=15
-Running config: nc=11 ne=14000 delta=15
-Running config: nc=11 ne=15000 delta=15
-Running config: nc=11 ne=16000 delta=15
-Running config: nc=11 ne=17000 delta=15
-Running config: nc=11 ne=18000 delta=15
 (11, 12000, 15) : (817.0967741935484, 354.05, 954.6839729119639)
 (11, 16000, 15) : (1217.5833333333333, 637.1428571428571, 1230.9357262103506)
 (11, 13000, 15) : (924.4222222222222, 436.6666666666667, 1023.9028925619834)
@@ -260,17 +145,6 @@ Running config: nc=11 ne=18000 delta=15
 (11, 8000, 15) : (446.6585365853659, 159.19444444444446, 660.9912126537786)
 (11, 7000, 15) : (436.55263157894734, 129.34782608695653, 610.6521739130435)
 Variating delta.
-Running config: nc=11 ne=10000 delta=0
-Running config: nc=11 ne=10000 delta=3
-Running config: nc=11 ne=10000 delta=6
-Running config: nc=11 ne=10000 delta=9
-Running config: nc=11 ne=10000 delta=12
-Running config: nc=11 ne=10000 delta=15
-Running config: nc=11 ne=10000 delta=18
-Running config: nc=11 ne=10000 delta=21
-Running config: nc=11 ne=10000 delta=24
-Running config: nc=11 ne=10000 delta=27
-Running config: nc=11 ne=10000 delta=30
 (11, 10000, 27) : (888.2307692307693, 760.2727272727273, 5008.493707647628)
 (11, 10000, 36) : (1590.75, 668.0392156862745, 4724.365537130498)
 (11, 10000, 33) : (1279.7592592592594, 680.5, 4785.274385408406)

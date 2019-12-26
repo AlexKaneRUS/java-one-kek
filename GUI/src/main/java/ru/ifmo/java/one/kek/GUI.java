@@ -16,7 +16,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.util.*;
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -235,9 +234,9 @@ public class GUI {
             delta.setMajorTickSpacing(20);
             delta.setPaintTicks(true);
 
-            dDelta = field(0, 1000, 50);
+            dDelta = field(0, 100, 50);
             dDelta.setEnabled(false);
-            stepDelta = field(1, 1000, 50);
+            stepDelta = field(1, 100, 50);
 
             nClients.addChangeListener(e -> {
                 nElems.setEnabled(false);
